@@ -1,0 +1,25 @@
+{
+  "name": "html-color-music",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Endless generative colour and music — one standalone HTML file: shader fractals and flows in time with a procedural soundtrack",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node tests/rng.mjs && node tests/music.mjs && node tests/palette.mjs && node tests/scene.mjs && node tests/settings.mjs",
+    "test:browser": "node tests/app.mjs && node tests/sound.mjs",
+    "shots": "node tools/shots.mjs",
+    "icons": "node tools/icons.mjs",
+    "check": "npm run typecheck && npm test && npm run build && npm run test:browser"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12",
+    "typescript": "^5.9.3"
+  }
+}

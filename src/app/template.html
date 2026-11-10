@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- viewport-fit=cover hands the notch and the home indicator to env(safe-area-inset-*). -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Nothing may leave the page: no fetch, no images or fonts from elsewhere, no forms posting
+     out. The music and the pictures are computed here; there is nothing to download. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#06060a">
+<title>Color Music</title>
+<link rel="icon" href="__ICON__">
+<style>/*__STYLES__*/</style>
+</head>
+<body data-state="intro">
+
+<canvas id="stage" class="stage" aria-hidden="true"></canvas>
+<div id="fallback" class="fallback" hidden></div>
+
+<section id="intro" class="intro" aria-labelledby="intro-title">
+  <div class="intro-card">
+    <img class="intro-logo" src="__ICON__" alt="">
+    <h1 id="intro-title" class="intro-title">Color Music</h1>
+    <p class="intro-sub">Endless colour and sound, made up as it plays. A new picture for every part of the song, a new song when one ends — fractals, flows and fields in time with the beat.</p>
+    <button id="start" class="button button--primary" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+      <span>Start</span>
+    </button>
+    <p class="intro-note keys-hint">Sound on · <kbd>Space</kbd> pause · <kbd>N</kbd> next song · <kbd>V</kbd> new picture · <kbd>F</kbd> full screen</p>
+    <p id="intro-update" class="intro-note" hidden></p>
+    <p id="gl-note" class="intro-warn" hidden>This browser cannot draw WebGL2, so the picture is a plain gradient. The music plays as usual.</p>
+  </div>
+</section>
+
+<header id="now" class="now" hidden>
+  <p id="now-title" class="now-title"></p>
+  <p id="now-meta" class="now-meta"></p>
+</header>
+
+<nav id="hud" class="hud" aria-label="Player" hidden>
+  <button id="play" class="icon-button" type="button" aria-label="Pause" title="Pause (Space)">
+    <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>
+    <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+  </button>
+  <button id="next" class="icon-button" type="button" aria-label="Next song" title="Next song (N)">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5v13l9-6.5zM15.5 5H19v14h-3.5z"/></svg>
+  </button>
+  <button id="visuals" class="icon-button" type="button" aria-label="New picture" title="New picture (V)">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2zM19 15.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z"/></svg>
+  </button>
+  <span class="hud-sep" aria-hidden="true"></span>
+  <button id="mute" class="icon-button" type="button" aria-label="Mute" aria-pressed="false" title="Mute (M)">
+    <svg class="icon-sound" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8.5a5 5 0 010 7M18.5 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <svg class="icon-muted" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </button>
+  <input id="volume" class="volume" type="range" min="0" max="1" step="0.01" aria-label="Volume">
+  <span class="hud-sep" aria-hidden="true"></span>
+  <button id="info" class="icon-button" type="button" aria-label="Details and options" aria-expanded="false" aria-controls="panel" title="Details and options (I)">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 10.5h2V17h-2zM11 7h2v2h-2z"/></svg>
+  </button>
+  <button id="fullscreen" class="icon-button" type="button" aria-label="Full screen" title="Full screen (F)">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+</nav>
+
+<aside id="panel" class="panel" aria-labelledby="panel-title" hidden>
+  <div class="panel-head">
+    <h2 id="panel-title">Now playing</h2>
+    <button id="panel-close" class="icon-button icon-button--small" type="button" aria-label="Close" title="Close (Esc)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <dl class="facts">
+    <dt>Song</dt><dd id="f-title"></dd>
+    <dt>Style</dt><dd id="f-style"></dd>
+    <dt>Key</dt><dd id="f-key"></dd>
+    <dt>Tempo</dt><dd id="f-tempo"></dd>
+    <dt>Chord</dt><dd id="f-chord" class="chord"></dd>
+    <dt>Part</dt><dd id="f-part"></dd>
+    <dt>Picture</dt><dd id="f-scene"></dd>
+  </dl>
+  <div id="swatch" class="swatch" aria-hidden="true"></div>
+
+  <form id="seed-form" class="seed" autocomplete="off">
+    <label for="seed">Seed</label>
+    <div class="seed-row">
+      <input id="seed" type="text" spellcheck="false" autocapitalize="off" maxlength="32">
+      <button class="button" type="submit">Play</button>
+    </div>
+    <p class="hint">The same seed plays the same song. Type one to hear it again.</p>
+  </form>
+
+  <h3>Options</h3>
+  <label class="field"><span>Music</span><select id="opt-style"><option value="">Any style</option></select></label>
+  <label class="field"><span>Pictures</span><select id="opt-pattern"><option value="">Any pattern</option></select></label>
+  <label class="field"><span>Change picture</span>
+    <select id="opt-pace">
+      <option value="section">Every part of the song</option>
+      <option value="phrase">Every four bars</option>
+      <option value="song">Once a song</option>
+    </select>
+  </label>
+  <label class="check"><input id="opt-calm" type="checkbox"> <span>Calm motion — slower, no flashes</span></label>
+
+  <div class="keys keys-hint">
+    <h3>Keys</h3>
+    <ul>
+      <li><kbd>Space</kbd> play / pause</li>
+      <li><kbd>N</kbd> or <kbd>→</kbd> next song</li>
+      <li><kbd>V</kbd> new picture</li>
+      <li><kbd>M</kbd> mute</li>
+      <li><kbd>F</kbd> full screen</li>
+      <li><kbd>I</kbd> this panel</li>
+      <li><kbd>H</kbd> hide the controls</li>
+    </ul>
+  </div>
+  <p class="version">Color Music <span id="version"></span> · <span id="quality"></span></p>
+  <!-- The installed app only (update.ts): checking for and installing a new deploy. -->
+  <p id="update" class="version" hidden></p>
+</aside>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>/*__APP__*/</script>
+</body>
+</html>

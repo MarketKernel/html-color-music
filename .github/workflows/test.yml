@@ -1,0 +1,37 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      # ubuntu-latest ships Chrome at /usr/bin/google-chrome, where tools/chrome.mjs looks;
+      # WebGL runs on SwiftShader, so the runner needs no graphics card.
+      - run: npm run test:browser
+
+      # The single HTML file must not pull anything off the network.
+      - name: No external references in the build
+        run: |
+          if grep -oE '(src|href)="(https?:)?//[^"]*"' build/color-music.html; then
+            echo "::error::external resources are left in build/color-music.html"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: color-music
+          path: build/color-music.html
